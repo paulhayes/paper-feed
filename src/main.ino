@@ -159,6 +159,8 @@ String getContentType(String filename) {
     return "application/x-zip";
   } else if (filename.endsWith(".gz")) {
     return "application/x-gzip";
+  } else if (filename.endsWith(".mp3")) {
+    return "audio/mpeg";
   }
   return "text/plain";
 }

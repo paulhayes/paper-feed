@@ -27,6 +27,11 @@ button {
     <button id="offBtn">Off</button>
     </div>  
     </div>
+    <div class="row">
+      <div class="col-12">
+        <button id="sndBtn">Play Sound</button>
+      </div>
+    </div>
   </div>
   <script>
     const onUrl='/led_on';
@@ -46,5 +51,15 @@ button {
     document.getElementById("onBtn").addEventListener("click",send.bind(null,onUrl));
     document.getElementById("offBtn").addEventListener("click",send.bind(null,offUrl));
     
+    const sound = new Audio('example.mp3');
+    
+    sound.addEventListener("play", function(){
+      send(onUrl);
+    });
+    sound.addEventListener("ended", function(){
+      send(offUrl);
+    });
+    document.getElementById("sndBtn").addEventListener("click",sound.play.bind(sound));
+
     </script>
 </html>
