@@ -22,14 +22,14 @@ void setup() {
   Serial.begin(115200);
   //while(!Serial);
   
-  WiFi.persistent(false);
-  WiFi.disconnect(true);
-  esp_bt_controller_disable();
+  //WiFi.persistent(false);
+  //WiFi.disconnect(true);
+  //esp_bt_controller_disable();
   nvs_flash_init();
-  WiFi.mode(WIFI_AP);
-  WiFi.softAP("CaptivePortalTest");
-  WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
   WiFi.setTxPower(WIFI_POWER_7dBm);
+  WiFi.mode(WIFI_AP);
+  WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
+  WiFi.softAP("CaptivePortalTest");
   SPIFFS.begin();
 
   
