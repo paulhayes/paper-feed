@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+
+<link rel="stylesheet" href="css/simple-grid.css">
+<style>
+body {
+  font-size: 2em;
+  text-align: center;
+  background-image: linear-gradient(rgb(243, 160, 112), rgb(254, 120, 232));
+}
+button {
+  font-size: 1em;
+}
+</style>
+<html>
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        LED Control
+      </div>
+  
+    </div>
+    <div class="row">
+    <div class="col-6">
+    <button id="onBtn">On</button>
+    </div>
+    <div class="col-6">
+    <button id="offBtn">Off</button>
+    </div>  
+    </div>
+  </div>
+  <script>
+    const onUrl='/led_on';
+    const offUrl ='/led_off';
+    
+    var send = function(url){
+      const Http = new XMLHttpRequest();
+      Http.open("GET", url);
+      Http.send();
+    
+      Http.onreadystatechange = (e) => {
+        console.log(Http.responseText)
+      }
+    
+    }
+
+    document.getElementById("onBtn").addEventListener("click",send.bind(null,onUrl));
+    document.getElementById("offBtn").addEventListener("click",send.bind(null,offUrl));
+    
+    </script>
+</html>

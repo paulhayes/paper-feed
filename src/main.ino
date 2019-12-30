@@ -13,21 +13,15 @@ DNSServer dnsServer;
 //WiFiServer server(80);
 WebServer server(80);
 
-extern const char captive_portal_html[] asm("_binary_web_test_html_start");
-extern const char captive_portal_html_end[] asm("_binary_web_test_html_end");
-
-extern const char css[] asm("_binary_web_css_simple_grid_css_start");
-extern const char css_end[] asm("_binary_web_css_simple_grid_css_end");
-
-
 uint8_t ledState = LOW;
 bool updateLed = true;
 
 void setup() {
+  setCpuFrequencyMhz(80);
   pinMode(4,OUTPUT);
   Serial.begin(115200);
-  while(!Serial);
-  setCpuFrequencyMhz(80);
+  //while(!Serial);
+  
   WiFi.persistent(false);
   WiFi.disconnect(true);
   esp_bt_controller_disable();
