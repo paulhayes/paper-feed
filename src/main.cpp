@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <WiFi.h>
 #include <DNSServer.h>
 #include <WebServer.h>
@@ -6,6 +7,7 @@
 #include <nvs_flash.h>
 #include <soc/rtc.h>
 #include <SPIFFS.h>
+#include "main.h"
 
 const byte DNS_PORT = 53;
 IPAddress apIP(192, 168, 1, 1);
@@ -29,12 +31,13 @@ void setup() {
   WiFi.setTxPower(WIFI_POWER_7dBm);
   WiFi.mode(WIFI_AP);
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
-  WiFi.softAP("CaptivePortalTest");
+  WiFi.softAP(WIFI_SSID,WIFI_PASS);
   SPIFFS.begin();
 
   
   // if DNSServer is started with "*" for domain name, it will reply with
   // provided IP to all DNS request
+  dnsServer.setTTL(3600);
   dnsServer.start(DNS_PORT, "*", apIP);
   const char * headerkeys[] = {"Host", "User-Agent", "Cookie"} ;
   size_t headerkeyssize = sizeof(headerkeys) / sizeof(char*);
@@ -58,9 +61,10 @@ void loop() {
   
   dnsServer.processNextRequest();
   server.handleClient();
+  delay(5);		
 
   if(updateLed){
-    digitalWrite(4,ledState);
+    //digitalWrite(,ledState);
     updateLed = false;
   } 
 }
