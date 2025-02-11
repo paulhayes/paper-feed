@@ -8,3 +8,4 @@ void ledOn();
 void ledOff();
 bool returnFile(String path);
 void handleUnknown();
+void redirect(const String& url);

@@ -9,6 +9,7 @@
 #include <SPIFFS.h>
 #include "main.h"
 
+const String localIPURL = "http://192.168.1.1/";
 const byte DNS_PORT = 53;
 IPAddress apIP(192, 168, 1, 1);
 DNSServer dnsServer;
@@ -69,6 +70,10 @@ void loop() {
   } 
 }
 
+void redirect(const String& url){
+  server.sendHeader("Location",url);
+  server.send(302,"text/plain","");
+}
 
 void handleUnknown(){
   String path = server.uri();

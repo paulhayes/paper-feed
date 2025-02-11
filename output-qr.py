@@ -4,17 +4,6 @@ if env.IsIntegrationDump():
    # stop the current script execution
    Return()
 
-#env.Execute("$PYTHONEXE -m pip install qrcode")
-
-# [env]
-# build_flags =
-#   -DMWIFI_SSID=\"CaptivePortalTest\"
-#   -DMWIFI_PASS="\"wicked stallion grape goose\""
-# extra_scripts = output-qr.py
-
-
-# print(env.Dump())
-
 try:
     import qrcode
     import PIL
