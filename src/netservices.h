@@ -22,8 +22,16 @@ void handle404();
 void handleUnknown();
 void ledOn();
 void ledOff();
+void handleGetMessages();
+void handlePostMessage();
 bool returnFile(String path);
 void redirect(const String& url);
 String getContentType(String filename);
+
+// Message management functions
+void initMessageSystem();
+void loadMessagesFromDisk();
+void cleanupOldMessages();
+String sanitizeMessage(const String& message);
 
 #endif

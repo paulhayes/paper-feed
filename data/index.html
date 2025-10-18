@@ -1,65 +1,322 @@
 <!DOCTYPE html>
-
-<link rel="stylesheet" href="css/simple-grid.css">
-<style>
-body {
-  font-size: 2em;
-  text-align: center;
-  background-image: linear-gradient(rgb(243, 160, 112), rgb(254, 120, 232));
-}
-button {
-  font-size: 1em;
-}
-</style>
 <html>
-  <div class="container">
-    <div class="row">
-      <div class="col-12">
-        LED Control
-      </div>
-  
-    </div>
-    <div class="row">
-    <div class="col-6">
-    <button id="onBtn">On</button>
-    </div>
-    <div class="col-6">
-    <button id="offBtn">Off</button>
-    </div>  
-    </div>
-    <div class="row">
-      <div class="col-12">
-        <button id="sndBtn">Play Sound</button>
-      </div>
-    </div>
-  </div>
-  <script>
-    const onUrl='/led_on';
-    const offUrl ='/led_off';
-    
-    var send = function(url){
-      const Http = new XMLHttpRequest();
-      Http.open("GET", url);
-      Http.send();
-    
-      Http.onreadystatechange = (e) => {
-        console.log(Http.responseText)
-      }
-    
-    }
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Feed</title>
+    <link rel="stylesheet" href="css/simple-grid.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #333;
+        }
+        .post-form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        #messageInput {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+            resize: vertical;
+            min-height: 80px;
+        }
+        #messageInput:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        .char-count {
+            text-align: right;
+            color: #666;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+        .char-count.warning {
+            color: #ff9800;
+        }
+        .char-count.error {
+            color: #f44336;
+        }
+        #submitBtn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            width: 100%;
+        }
+        #submitBtn:hover {
+            background-color: #45a049;
+        }
+        #submitBtn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .rate-limit-msg {
+            color: #ff9800;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+        .error-msg {
+            color: #f44336;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+        .success-msg {
+            color: #4CAF50;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+        .messages {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .message {
+            background: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .message-text {
+            font-size: 16px;
+            color: #333;
+            word-wrap: break-word;
+        }
+        .message-time {
+            font-size: 12px;
+            color: #999;
+            margin-top: 8px;
+        }
+        .no-messages {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+            background: white;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Message Feed</h1>
+        </div>
 
-    document.getElementById("onBtn").addEventListener("click",send.bind(null,onUrl));
-    document.getElementById("offBtn").addEventListener("click",send.bind(null,offUrl));
-    
-    const sound = new Audio('example.mp3');
-    
-    sound.addEventListener("play", function(){
-      send(onUrl);
-    });
-    sound.addEventListener("ended", function(){
-      send(offUrl);
-    });
-    document.getElementById("sndBtn").addEventListener("click",sound.play.bind(sound));
+        <div class="post-form">
+            <textarea id="messageInput" placeholder="What's on your mind? (max 140 characters)" maxlength="140"></textarea>
+            <div class="char-count" id="charCount">0 / 140</div>
+            <button id="submitBtn">Post Message</button>
+            <div class="rate-limit-msg" id="rateLimitMsg"></div>
+            <div class="error-msg" id="errorMsg"></div>
+            <div class="success-msg" id="successMsg"></div>
+        </div>
 
+        <div class="messages" id="messages">
+            <div class="no-messages">Loading messages...</div>
+        </div>
+    </div>
+
+    <script>
+        const messageInput = document.getElementById('messageInput');
+        const charCount = document.getElementById('charCount');
+        const submitBtn = document.getElementById('submitBtn');
+        const rateLimitMsg = document.getElementById('rateLimitMsg');
+        const errorMsg = document.getElementById('errorMsg');
+        const successMsg = document.getElementById('successMsg');
+        const messagesContainer = document.getElementById('messages');
+
+        let lastPostTime = 0;
+        const POST_COOLDOWN = 60000; // 1 minute in milliseconds
+
+        // Update character count
+        messageInput.addEventListener('input', function() {
+            const count = this.value.length;
+            charCount.textContent = count + ' / 140';
+
+            if (count > 120) {
+                charCount.classList.add('warning');
+            } else {
+                charCount.classList.remove('warning');
+            }
+
+            if (count === 140) {
+                charCount.classList.add('error');
+            } else {
+                charCount.classList.remove('error');
+            }
+
+            updateSubmitButton();
+        });
+
+        // Update submit button state
+        function updateSubmitButton() {
+            const now = Date.now();
+            const timeSinceLastPost = now - lastPostTime;
+            const canPost = timeSinceLastPost >= POST_COOLDOWN;
+            const hasContent = messageInput.value.trim().length > 0;
+
+            submitBtn.disabled = !canPost || !hasContent;
+
+            if (!canPost && hasContent) {
+                const timeLeft = Math.ceil((POST_COOLDOWN - timeSinceLastPost) / 1000);
+                rateLimitMsg.textContent = 'Please wait ' + timeLeft + ' seconds before posting again';
+                rateLimitMsg.style.display = 'block';
+            } else {
+                rateLimitMsg.style.display = 'none';
+            }
+        }
+
+        // Update rate limit message every second
+        setInterval(updateSubmitButton, 1000);
+
+        // Hide messages after 3 seconds
+        function hideMessage(element) {
+            setTimeout(function() {
+                element.style.display = 'none';
+            }, 3000);
+        }
+
+        // Post message
+        submitBtn.addEventListener('click', function() {
+            const message = messageInput.value.trim();
+
+            if (message.length === 0 || message.length > 140) {
+                errorMsg.textContent = 'Message must be between 1 and 140 characters';
+                errorMsg.style.display = 'block';
+                hideMessage(errorMsg);
+                return;
+            }
+
+            const now = Date.now();
+            if (now - lastPostTime < POST_COOLDOWN) {
+                errorMsg.textContent = 'Please wait before posting again';
+                errorMsg.style.display = 'block';
+                hideMessage(errorMsg);
+                return;
+            }
+
+            // Send POST request
+            fetch('/api/message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    successMsg.textContent = 'Message posted successfully!';
+                    successMsg.style.display = 'block';
+                    hideMessage(successMsg);
+                    messageInput.value = '';
+                    charCount.textContent = '0 / 140';
+                    charCount.classList.remove('warning', 'error');
+                    lastPostTime = now;
+                    updateSubmitButton();
+                    loadMessages();
+                } else {
+                    errorMsg.textContent = data.error || 'Failed to post message';
+                    errorMsg.style.display = 'block';
+                    hideMessage(errorMsg);
+                }
+            })
+            .catch(error => {
+                errorMsg.textContent = 'Network error. Please try again.';
+                errorMsg.style.display = 'block';
+                hideMessage(errorMsg);
+                console.error('Error:', error);
+            });
+        });
+
+        // Load messages
+        function loadMessages() {
+            fetch('/api/messages')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.messages && data.messages.length > 0) {
+                        messagesContainer.innerHTML = '';
+                        data.messages.forEach(msg => {
+                            const messageDiv = document.createElement('div');
+                            messageDiv.className = 'message';
+
+                            const textDiv = document.createElement('div');
+                            textDiv.className = 'message-text';
+                            textDiv.textContent = msg.text;
+
+                            const timeDiv = document.createElement('div');
+                            timeDiv.className = 'message-time';
+                            timeDiv.textContent = formatTime(msg.timestamp);
+
+                            messageDiv.appendChild(textDiv);
+                            messageDiv.appendChild(timeDiv);
+                            messagesContainer.appendChild(messageDiv);
+                        });
+                    } else {
+                        messagesContainer.innerHTML = '<div class="no-messages">No messages yet. Be the first to post!</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading messages:', error);
+                    messagesContainer.innerHTML = '<div class="no-messages">Error loading messages</div>';
+                });
+        }
+
+        // Format timestamp
+        function formatTime(timestamp) {
+            const date = new Date(timestamp * 1000);
+            const now = new Date();
+            const diff = now - date;
+
+            // Less than 1 minute
+            if (diff < 60000) {
+                return 'Just now';
+            }
+            // Less than 1 hour
+            if (diff < 3600000) {
+                const minutes = Math.floor(diff / 60000);
+                return minutes + ' minute' + (minutes > 1 ? 's' : '') + ' ago';
+            }
+            // Less than 24 hours
+            if (diff < 86400000) {
+                const hours = Math.floor(diff / 3600000);
+                return hours + ' hour' + (hours > 1 ? 's' : '') + ' ago';
+            }
+            // Less than 7 days
+            if (diff < 604800000) {
+                const days = Math.floor(diff / 86400000);
+                return days + ' day' + (days > 1 ? 's' : '') + ' ago';
+            }
+            // Older - show date
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        }
+
+        // Load messages on page load
+        loadMessages();
+
+        // Refresh messages every 30 seconds
+        setInterval(loadMessages, 30000);
     </script>
+</body>
 </html>
