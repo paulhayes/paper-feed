@@ -180,14 +180,17 @@ void ledOff(){
 }
 
 bool exists(String path){
-  bool yes = false;
+  if(!SPIFFS.exists(path)){
+    return false;
+  }
+
   File file = SPIFFS.open(path, "r");
-  
+  bool fileExists = false;
   if(!file.isDirectory()){
-    yes = true;
+    fileExists = true;
   }
   file.close();
-  return yes;
+  return fileExists;
 }
 
 String getContentType(String filename) {
