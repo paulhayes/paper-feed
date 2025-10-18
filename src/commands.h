@@ -6,49 +6,6 @@
 #ifndef COMMANDS_H
 #define COMMANDS_H
 
-#define MAX_PROPERTIES 32
-
-property_t properties[MAX_PROPERTIES];
-int propertyCount = 0;
-Preferences prefs;
-
-void registerProperty(const char* name, void* value, PropertyType type) {
-    if(propertyCount >= MAX_PROPERTIES) return;
-
-    property_t &prop = properties[propertyCount];
-    strncpy(prop.propertyName, name, 31);
-    prop.propertyName[31] = '\0';
-    prop.propertyValue = value;
-    prop.propertyType = type;
-
-    prefs.begin("settings", true);
-    if(prefs.isKey(name)) {
-        switch(type) {
-            case STRING:
-                *(String*)value = prefs.getString(name);
-                break;
-            case FLOAT:
-                *(float*)value = prefs.getFloat(name);
-                break;
-            case INT:
-                *(int*)value = prefs.getInt(name);
-                break;
-        }
-    }
-    prefs.end();
-
-    propertyCount++;
-}
-
-property_t* findProperty(const char* name) {
-    for(int i = 0; i < propertyCount; i++) {
-        if(strcmp(properties[i].propertyName, name) == 0) {
-            return &properties[i];
-        }
-    }
-    return nullptr;
-}
-
 int badArgCount( char * cmdName )
 {
     shell.print(cmdName);
@@ -193,6 +150,47 @@ int cmd_dir(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
+int cmd_props(int argc, char **argv) {
+    if(propertyCount == 0) {
+        Serial.println("No properties registered");
+        return EXIT_SUCCESS;
+    }
+
+    Serial.print("Registered properties (");
+    Serial.print(propertyCount);
+    Serial.println("):");
+
+    for(int i = 0; i < propertyCount; i++) {
+        Serial.print("  ");
+        Serial.print(properties[i].propertyName);
+        Serial.print(" [");
+        switch(properties[i].propertyType) {
+            case STRING:
+                Serial.print("STRING");
+                break;
+            case FLOAT:
+                Serial.print("FLOAT");
+                break;
+            case INT:
+                Serial.print("INT");
+                break;
+        }
+        Serial.print("] = ");
+        switch(properties[i].propertyType) {
+            case STRING:
+                Serial.println(*(String*)properties[i].propertyValue);
+                break;
+            case FLOAT:
+                Serial.println(*(float*)properties[i].propertyValue);
+                break;
+            case INT:
+                Serial.println(*(int*)properties[i].propertyValue);
+                break;
+        }
+    }
+    return EXIT_SUCCESS;
+}
+
 void setupCommands() {
     shell.attach(Serial);
     shell.addCommand(F("reset"), cmd_reset);
@@ -201,6 +199,7 @@ void setupCommands() {
     shell.addCommand(F("get"), cmd_get);
     shell.addCommand(F("exists"), cmd_exists);
     shell.addCommand(F("dir"), cmd_dir);
+    shell.addCommand(F("props"), cmd_props);
 }
 
 
