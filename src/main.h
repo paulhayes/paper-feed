@@ -1,5 +1,7 @@
 #include <Arduino.h>
 
+#ifndef MAIN_H
+#define MAIN_H
 
 #ifndef WIFI_SSID
 #define SSID "NOT SET"
@@ -20,3 +22,5 @@ bool returnFile(String path);
 void handleUnknown();
 void redirect(const String& url);
 void webTask(void *p);
+
+#endif

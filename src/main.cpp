@@ -9,6 +9,7 @@
 #include <soc/rtc.h>
 #include <SPIFFS.h>
 #include "main.h"
+#include "commands.h"
 
 const String localIPURL = "http://192.168.1.1/";
 const byte DNS_PORT = 53;
@@ -93,7 +94,9 @@ void setup() {
     server.send(200, "text/css", css);
   });
   */
-  Serial.println("Waiting for clients"); 
+  Serial.println("Waiting for clients");
+
+  setupCommands();
 
   xTaskCreatePinnedToCore(webTask,"WEB_UPDATE",4096,NULL,1,NULL,1);
 }
@@ -106,13 +109,14 @@ void webTask(void *p){
 }
 
 void loop() {
-  
-  delay(5);		
+  shell.executeIfInput();
+
+  delay(5);
 
   if(updateLed){
-    //digitalWrite(,ledState);
+    digitalWrite(4,ledState);
     updateLed = false;
-  } 
+  }
 }
 
 void redirect(const String& url){
