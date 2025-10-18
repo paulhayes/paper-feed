@@ -49,17 +49,23 @@ property_t* findProperty(const char* name) {
     return nullptr;
 }
 
+int badArgCount( char * cmdName )
+{
+    shell.print(cmdName);
+    shell.println(F(": bad arg count"));
+    return -1;
+}
+
 int cmd_reset(int argc, char **argv) {
     Serial.println("Resetting MCU...");
     delay(100);
     ESP.restart();
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 int cmd_led(int argc, char **argv) {
     if(argc < 2) {
-        Serial.println("Usage: led <on|off>");
-        return -1;
+        return badArgCount(argv[0]);
     }
 
     if(strcmp(argv[1], "on") == 0) {
@@ -72,20 +78,19 @@ int cmd_led(int argc, char **argv) {
         Serial.println("Usage: led <on|off>");
         return -1;
     }
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 int cmd_set(int argc, char **argv) {
     if(argc < 3) {
-        Serial.println("Usage: set <property> <value>");
-        return -1;
+        return badArgCount(argv[0]);
     }
 
     property_t* prop = findProperty(argv[1]);
     if(!prop) {
         Serial.print("Property not found: ");
         Serial.println(argv[1]);
-        return -1;
+        return -2;
     }
 
     prefs.begin("settings", false);
@@ -108,20 +113,19 @@ int cmd_set(int argc, char **argv) {
     Serial.print(prop->propertyName);
     Serial.print(" = ");
     Serial.println(argv[2]);
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 int cmd_get(int argc, char **argv) {
     if(argc < 2) {
-        Serial.println("Usage: get <property>");
-        return -1;
+        return badArgCount(argv[0]);
     }
 
     property_t* prop = findProperty(argv[1]);
     if(!prop) {
         Serial.print("Property not found: ");
         Serial.println(argv[1]);
-        return -1;
+        return -2;
     }
 
     Serial.print(prop->propertyName);
@@ -137,13 +141,12 @@ int cmd_get(int argc, char **argv) {
             Serial.println(*(int*)prop->propertyValue);
             break;
     }
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 int cmd_exists(int argc, char **argv) {
     if(argc < 2) {
-        Serial.println("Usage: exists <path>");
-        return -1;
+        return badArgCount(argv[0]);
     }
 
     if(exists(String(argv[1]))) {
@@ -153,7 +156,7 @@ int cmd_exists(int argc, char **argv) {
         Serial.print(argv[1]);
         Serial.println(" not found");
     }
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 int cmd_dir(int argc, char **argv) {
@@ -165,13 +168,13 @@ int cmd_dir(int argc, char **argv) {
     File root = SPIFFS.open(path);
     if(!root) {
         Serial.println("Failed to open directory");
-        return -1;
+        return -3;
     }
 
     if(!root.isDirectory()) {
         Serial.println("Not a directory");
         root.close();
-        return -1;
+        return -4;
     }
 
     File file = root.openNextFile();
@@ -187,7 +190,7 @@ int cmd_dir(int argc, char **argv) {
         file = root.openNextFile();
     }
     root.close();
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 void setupCommands() {
@@ -199,5 +202,7 @@ void setupCommands() {
     shell.addCommand(F("exists"), cmd_exists);
     shell.addCommand(F("dir"), cmd_dir);
 }
+
+
 
 #endif
