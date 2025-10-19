@@ -255,23 +255,16 @@ void loadMessagesFromDisk() {
         return;
     }
 
-    Serial.println("Reading messages from /messages directory:");
-
     // Collect all message files
     File file = root.openNextFile();
     while (file && messageCount < MAX_MESSAGES) {
         if (!file.isDirectory()) {
             String filename = String(file.name());
-            Serial.print("  Found file: ");
-            Serial.println(filename);
 
             // Parse message timestamp from filename
             int lastSlash = filename.lastIndexOf('/');
             String basename = filename.substring(lastSlash + 1);
             unsigned long timestamp = basename.toInt();
-
-            Serial.print("    Parsed timestamp: ");
-            Serial.println(timestamp);
 
             if (timestamp > 0) {
                 // Read message content
@@ -280,14 +273,9 @@ void loadMessagesFromDisk() {
                     content += (char)file.read();
                 }
 
-                Serial.print("    Content length: ");
-                Serial.println(content.length());
-
                 messages[messageCount].timestamp = timestamp;
                 messages[messageCount].text = content;
                 messageCount++;
-            } else {
-                Serial.println("    Skipped: invalid timestamp");
             }
         }
         file.close();
@@ -314,19 +302,28 @@ void cleanupOldMessages() {
     // Remove messages older than 30 days
     int writeIdx = 0;
     for (int i = 0; i < messageCount; i++) {
-        unsigned long age = now - messages[i].timestamp;
-        if (age <= MESSAGE_MAX_AGE) {
+        // Check if timestamp is in the future (RTC not set correctly)
+        if (messages[i].timestamp > now) {
+            // Keep messages with future timestamps (RTC not set)
             if (writeIdx != i) {
                 messages[writeIdx] = messages[i];
             }
             writeIdx++;
         } else {
-            // Delete file from disk
-            String filename = "/messages/" + String(messages[i].timestamp);
-            if (LittleFS.exists(filename)) {
-                LittleFS.remove(filename);
-                Serial.print("Deleted old message: ");
-                Serial.println(filename);
+            unsigned long age = now - messages[i].timestamp;
+            if (age <= MESSAGE_MAX_AGE) {
+                if (writeIdx != i) {
+                    messages[writeIdx] = messages[i];
+                }
+                writeIdx++;
+            } else {
+                // Delete file from disk
+                String filename = "/messages/" + String(messages[i].timestamp);
+                if (LittleFS.exists(filename)) {
+                    LittleFS.remove(filename);
+                    Serial.print("Deleted old message: ");
+                    Serial.println(filename);
+                }
             }
         }
     }

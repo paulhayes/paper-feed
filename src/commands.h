@@ -124,6 +124,7 @@ int cmd_cat(int argc, char **argv){
     if(exists(path)){
         File file = LittleFS.open(path,"r");
         shell.println( file.readString());
+        file.close();
     }
 }
 

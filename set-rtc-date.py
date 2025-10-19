@@ -53,8 +53,8 @@ def set_device_date(*args, **kwargs):
 
         # Send date command
         command = f"date {iso_date}\n"
-        print(f"Sending command: {command.strip()}")
-        ser.write(command.encode('utf-8'))
+        print(f"Sending command: {command}")
+        ser.write(command.encode('ascii'))
         ser.flush()
 
         # Wait for response
