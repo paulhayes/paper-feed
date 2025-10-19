@@ -1,4 +1,5 @@
 .pio
 .vscode
-*.png
+.claude
 config.ini
+**/connect-qr.png

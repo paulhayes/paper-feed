@@ -14,5 +14,6 @@
 
 bool exists(String path);
 unsigned long getRtcTime();
+void updateDisplayWithLatestMessage();
 
 #endif

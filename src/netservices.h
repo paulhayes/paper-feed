@@ -33,5 +33,6 @@ void initMessageSystem();
 void loadMessagesFromDisk();
 void cleanupOldMessages();
 String sanitizeMessage(const String& message);
+String getLatestMessage();
 
 #endif

@@ -1,8 +1,9 @@
 #include <ArduinoOTA.h>
-#include <SPIFFS.h>
+#include <LittleFS.h>
 #include <ArduinoJson.h>
 #include "netservices.h"
 #include "main.h"
+#include "display.h"
 
 const String localIPURL = "http://192.168.1.1/";
 const byte DNS_PORT = 53;
@@ -41,7 +42,6 @@ void setupWiFi() {
     WiFi.setTxPower(WIFI_POWER_7dBm);
     WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
     Serial.print("wifi password:");
-    Serial.println(wifi_password);
     WiFi.softAP(WIFI_SSID, WIFI_PASS);
 }
 
@@ -103,8 +103,7 @@ void setupWebServer() {
 
 void webTask(void *p) {
     while(true) {
-        dnsServer.processNextRequest();
-        server.handleClient();
+        delay(500);
     }
 }
 
@@ -129,7 +128,7 @@ bool returnFile(String path) {
     if(exists(path)) {
         Serial.print("returning file ");
         Serial.println(path);
-        File file = SPIFFS.open(path, "r");
+        File file = LittleFS.open(path, "r");
         String type = getContentType(path);
         server.streamFile(file, type);
         file.close();
@@ -207,9 +206,9 @@ void initMessageSystem() {
     Serial.println("Initializing message system");
 
     // Create messages directory if it doesn't exist
-    if (!SPIFFS.exists("/messages")) {
+    if (!LittleFS.exists("/messages")) {
         Serial.println("Creating /messages directory");
-        SPIFFS.mkdir("/messages");
+        LittleFS.mkdir("/messages");
     }
 
     // Load existing messages from disk
@@ -250,22 +249,29 @@ String sanitizeMessage(const String& message) {
 void loadMessagesFromDisk() {
     messageCount = 0;
 
-    File root = SPIFFS.open("/messages");
+    File root = LittleFS.open("/messages");
     if (!root || !root.isDirectory()) {
         Serial.println("Failed to open /messages directory");
         return;
     }
+
+    Serial.println("Reading messages from /messages directory:");
 
     // Collect all message files
     File file = root.openNextFile();
     while (file && messageCount < MAX_MESSAGES) {
         if (!file.isDirectory()) {
             String filename = String(file.name());
+            Serial.print("  Found file: ");
+            Serial.println(filename);
 
-            // Parse timestamp from filename
+            // Parse message timestamp from filename
             int lastSlash = filename.lastIndexOf('/');
             String basename = filename.substring(lastSlash + 1);
             unsigned long timestamp = basename.toInt();
+
+            Serial.print("    Parsed timestamp: ");
+            Serial.println(timestamp);
 
             if (timestamp > 0) {
                 // Read message content
@@ -274,13 +280,20 @@ void loadMessagesFromDisk() {
                     content += (char)file.read();
                 }
 
+                Serial.print("    Content length: ");
+                Serial.println(content.length());
+
                 messages[messageCount].timestamp = timestamp;
                 messages[messageCount].text = content;
                 messageCount++;
+            } else {
+                Serial.println("    Skipped: invalid timestamp");
             }
         }
+        file.close();
         file = root.openNextFile();
     }
+    root.close();
 
     // Sort messages by timestamp (newest first)
     for (int i = 0; i < messageCount - 1; i++) {
@@ -310,8 +323,8 @@ void cleanupOldMessages() {
         } else {
             // Delete file from disk
             String filename = "/messages/" + String(messages[i].timestamp);
-            if (SPIFFS.exists(filename)) {
-                SPIFFS.remove(filename);
+            if (LittleFS.exists(filename)) {
+                LittleFS.remove(filename);
                 Serial.print("Deleted old message: ");
                 Serial.println(filename);
             }
@@ -323,8 +336,8 @@ void cleanupOldMessages() {
     while (messageCount > MAX_MESSAGES) {
         messageCount--;
         String filename = "/messages/" + String(messages[messageCount].timestamp);
-        if (SPIFFS.exists(filename)) {
-            SPIFFS.remove(filename);
+        if (LittleFS.exists(filename)) {
+            LittleFS.remove(filename);
             Serial.print("Deleted excess message: ");
             Serial.println(filename);
         }
@@ -423,8 +436,8 @@ void handlePostMessage() {
     if (messageCount >= MAX_MESSAGES) {
         // Remove oldest message (last in array since sorted newest first)
         String oldFilename = "/messages/" + String(messages[MAX_MESSAGES - 1].timestamp);
-        if (SPIFFS.exists(oldFilename)) {
-            SPIFFS.remove(oldFilename);
+        if (LittleFS.exists(oldFilename)) {
+            LittleFS.remove(oldFilename);
         }
         messageCount = MAX_MESSAGES - 1;
     }
@@ -441,7 +454,7 @@ void handlePostMessage() {
 
     // Save to disk
     String filename = "/messages/" + String(now);
-    File file = SPIFFS.open(filename, "w");
+    File file = LittleFS.open(filename, "w");
     if (file) {
         file.print(sanitized);
         file.close();
@@ -451,6 +464,7 @@ void handlePostMessage() {
         Serial.print("Failed to save message: ");
         Serial.println(filename);
     }
+    
 
     // Update last post time
     lastPostTime = now;
@@ -465,4 +479,15 @@ void handlePostMessage() {
     String response;
     serializeJson(doc, response);
     server.send(200, "application/json", response);
+
+    // Update the display with the new message
+    updateMessageDisplay(sanitized);
+}
+
+// Get the latest message text
+String getLatestMessage() {
+    if (messageCount > 0) {
+        return messages[0].text;
+    }
+    return "";
 }

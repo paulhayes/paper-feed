@@ -2,10 +2,11 @@
 #include "esp_bt.h"
 #include "esp32-hal-cpu.h"
 #include <soc/rtc.h>
-#include <SPIFFS.h>
+#include <LittleFS.h>
 #include "main.h"
 #include "netservices.h"
 #include "commands.h"
+#include "display.h"
 
 uint8_t ledState = LOW;
 bool updateLed = true;
@@ -20,9 +21,15 @@ void setup() {
   
   M5.begin();
 
-  SPIFFS.begin();
+  if(!LittleFS.begin()){
+    Serial.println("LittleFS failed to load");
+  }
 
+  // Initialize network and load messages first
   networkSetup();
+
+  // Setup display after messages are loaded
+  setupDisplay();
 
   Serial.println("Waiting for clients");
 
@@ -33,6 +40,8 @@ void setup() {
 
 void loop() {
   shell.executeIfInput();
+  dnsServer.processNextRequest();
+  server.handleClient();
 
   delay(5);
 
@@ -43,11 +52,11 @@ void loop() {
 }
 
 bool exists(String path) {
-  if(!SPIFFS.exists(path)) {
+  if(!LittleFS.exists(path)) {
     return false;
   }
 
-  File file = SPIFFS.open(path, "r");
+  File file = LittleFS.open(path, "r");
   bool fileExists = false;
   if(!file.isDirectory()) {
     fileExists = true;

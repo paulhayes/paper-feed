@@ -116,13 +116,24 @@ int cmd_exists(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
+int cmd_cat(int argc, char **argv){
+    if(argc < 2) {
+        return badArgCount(argv[0]);
+    }
+    const char* path = argv[1];
+    if(exists(path)){
+        File file = LittleFS.open(path,"r");
+        shell.println( file.readString());
+    }
+}
+
 int cmd_dir(int argc, char **argv) {
     const char* path = "/";
     if(argc >= 2) {
         path = argv[1];
     }
 
-    File root = SPIFFS.open(path);
+    File root = LittleFS.open(path);
     if(!root) {
         Serial.println("Failed to open directory");
         return -3;
@@ -258,6 +269,7 @@ void setupCommands() {
     shell.addCommand(F("get"), cmd_get);
     shell.addCommand(F("exists"), cmd_exists);
     shell.addCommand(F("dir"), cmd_dir);
+    shell.addCommand(F("cat"),cmd_cat);
     shell.addCommand(F("props"), cmd_props);
     shell.addCommand(F("date"), cmd_date);
 }

@@ -39,4 +39,4 @@ qrcode_str = f"WIFI:T:WPA;S:{wifi_ssid};P:{wifi_password};;"
 print(qrcode_str)
 img = qrcode.make(qrcode_str)
 type(img)  # qrcode.image.pil.PilImage
-img.save("connect-qr.png")
+img.save("data/connect-qr.png")
