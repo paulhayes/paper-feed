@@ -52,7 +52,7 @@ def set_device_date(*args, **kwargs):
         iso_date = current_time.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         # Send date command
-        command = f"date {iso_date}\n"
+        command = f"date {iso_date}\r\n"
         print(f"Sending command: {command}")
         ser.write(command.encode('ascii'))
         ser.flush()
@@ -61,35 +61,19 @@ def set_device_date(*args, **kwargs):
         time.sleep(0.5)
 
         # Read response
-        response_lines = []
-        while ser.in_waiting > 0:
-            line = ser.readline().decode('utf-8', errors='ignore').strip()
-            if line:
-                response_lines.append(line)
-
-        # Display response
-        if response_lines:
-            print("\nDevice response:")
-            for line in response_lines:
-                print(f"  {line}")
+        print("\nDevice response:")
+        print( b"\n".join(ser.readlines()).decode('utf-8') )        
 
         # Verify by reading the date back
         time.sleep(0.2)
-        ser.reset_input_buffer()
-        ser.write(b"date\n")
+        ser.write("date\r\n".encode('ascii'))
         ser.flush()
         time.sleep(0.5)
 
-        verify_lines = []
-        while ser.in_waiting > 0:
-            line = ser.readline().decode('utf-8', errors='ignore').strip()
-            if line:
-                verify_lines.append(line)
+        line = b"".join(ser.readlines())
 
-        if verify_lines:
-            print("\nVerification - Current RTC time:")
-            for line in verify_lines:
-                print(f"  {line}")
+        print("\nVerification - Current RTC time:")
+        print(f"  {line.decode('utf-8')}")
 
         # Close serial connection
         ser.close()

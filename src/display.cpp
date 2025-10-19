@@ -43,7 +43,12 @@ void displayQRCodeAndMessage(const String& message) {
 
     // Draw QR code
     if (exists(QR_IMAGE_PATH)) {
-        canvas.drawPngFile(LittleFS, QR_IMAGE_PATH, 0, 0);
+        int qrcodeSize=370;
+        int x = (canvas.width()-qrcodeSize)/2;
+        canvas.drawPngFile(LittleFS, QR_IMAGE_PATH, x, 0);
+        char qrcodeStr[64];
+        sprintf(qrcodeStr,"WIFI:T:WPA;S:%s;P:%s;;",WIFI_SSID,WIFI_PASS);
+        canvas.qrcode(qrcodeStr,x,0,qrcodeSize);        
     } else {
         // Draw placeholder if QR code not found
         canvas.setTextColor(TFT_BLACK);
@@ -57,7 +62,7 @@ void displayQRCodeAndMessage(const String& message) {
     int messageAreaHeight = displayHeight - QR_SIZE - 20;
     
     // Draw message area background
-    canvas.fillRect(0, messageY, displayWidth, messageAreaHeight, TFT_LIGHTGRAY);
+    //canvas.fillRect(0, messageY, displayWidth, messageAreaHeight, TFT_LIGHTGRAY);
     canvas.setTextWrap(true);
 
     // Set up text for message display
@@ -67,16 +72,18 @@ void displayQRCodeAndMessage(const String& message) {
 
     // Draw "Latest Message:" label
     canvas.drawString("Latest Message:", 10, messageY + 5);
+    messageY+=canvas.fontHeight()+5;
     
     if (message.length() > 0) {
-        canvas.setFont(&fonts::DejaVu72);
+        canvas.setFont(&fonts::DejaVu56);
         canvas.setTextWrap(true);
-        //canvas.setCursor(10, messageY + 35);
-        canvas.drawString(message,10, messageY+5+canvas.fontHeight()+5);
+        canvas.setCursor(10, messageY + 5 + canvas.fontHeight());
+        //canvas.drawString(message,10, messageY);
+        canvas.write(message.c_str());
         canvas.setTextWrap(true);
     } else {
         canvas.setFont(&fonts::Font4);
-        canvas.drawString("No messages yet", 10, messageY + 5 + canvas.fontHeight());
+        canvas.drawString("No messages yet",10,messageY);
     }
 
     

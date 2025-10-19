@@ -90,8 +90,8 @@ void setupDNS() {
 
 void setupWebServer() {
     const char * headerkeys[] = {"Host", "User-Agent", "Cookie"};
-    size_t headerkeyssize = sizeof(headerkeys) / sizeof(char*);
-    server.collectHeaders(headerkeys, headerkeyssize);
+    // size_t headerkeyssize = sizeof(headerkeys) / sizeof(char*);
+    // server.collectHeaders(headerkeys, headerkeyssize);
     server.begin();
     server.on("/", handleRoot);
     server.on("/led_on", ledOn);
@@ -115,7 +115,7 @@ void redirect(const String& url) {
 void handleUnknown() {
     String path = server.uri();
     if(!returnFile(path)) {
-        handleRoot();
+        redirect("/index.html");
     }
 }
 
@@ -493,21 +493,20 @@ String getLatestMessage() {
 void clearAllMessages() {
     Serial.println("Clearing all messages...");
 
-    // Delete all message files from disk
     File root = LittleFS.open("/messages");
     if (root && root.isDirectory()) {
         File file = root.openNextFile();
         while (file) {
             if (!file.isDirectory()) {
-                String filename = String(file.name());
+                String filepath = String(file.path());
                 file.close();
 
-                if (LittleFS.remove(filename)) {
+                if (LittleFS.remove(filepath)) {
                     Serial.print("Deleted: ");
-                    Serial.println(filename);
+                    Serial.println(filepath);
                 } else {
                     Serial.print("Failed to delete: ");
-                    Serial.println(filename);
+                    Serial.println(filepath);
                 }
             } else {
                 file.close();
