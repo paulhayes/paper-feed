@@ -488,3 +488,40 @@ String getLatestMessage() {
     }
     return "";
 }
+
+// Clear all messages from memory and disk
+void clearAllMessages() {
+    Serial.println("Clearing all messages...");
+
+    // Delete all message files from disk
+    File root = LittleFS.open("/messages");
+    if (root && root.isDirectory()) {
+        File file = root.openNextFile();
+        while (file) {
+            if (!file.isDirectory()) {
+                String filename = String(file.name());
+                file.close();
+
+                if (LittleFS.remove(filename)) {
+                    Serial.print("Deleted: ");
+                    Serial.println(filename);
+                } else {
+                    Serial.print("Failed to delete: ");
+                    Serial.println(filename);
+                }
+            } else {
+                file.close();
+            }
+            file = root.openNextFile();
+        }
+        root.close();
+    }
+
+    // Clear messages from memory
+    messageCount = 0;
+
+    Serial.println("All messages cleared");
+
+    // Update display to show no messages
+    updateMessageDisplay("");
+}

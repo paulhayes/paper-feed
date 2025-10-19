@@ -34,5 +34,6 @@ void loadMessagesFromDisk();
 void cleanupOldMessages();
 String sanitizeMessage(const String& message);
 String getLatestMessage();
+void clearAllMessages();
 
 #endif

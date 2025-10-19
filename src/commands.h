@@ -2,6 +2,7 @@
 #include <SimpleSerialShell.h>
 #include <Preferences.h>
 #include "properties.h"
+#include "netservices.h"
 
 #ifndef COMMANDS_H
 #define COMMANDS_H
@@ -122,10 +123,11 @@ int cmd_cat(int argc, char **argv){
     }
     const char* path = argv[1];
     if(exists(path)){
-        File file = LittleFS.open(path,"r");
+        File file = LittleFS.open(path,"r");        
         shell.println( file.readString());
         file.close();
     }
+    return EXIT_SUCCESS;
 }
 
 int cmd_dir(int argc, char **argv) {
@@ -262,6 +264,11 @@ int cmd_date(int argc, char **argv) {
     }
 }
 
+int cmd_clear_msgs(int argc, char **argv) {
+    clearAllMessages();
+    return EXIT_SUCCESS;
+}
+
 void setupCommands() {
     shell.attach(Serial);
     shell.addCommand(F("reset"), cmd_reset);
@@ -273,6 +280,7 @@ void setupCommands() {
     shell.addCommand(F("cat"),cmd_cat);
     shell.addCommand(F("props"), cmd_props);
     shell.addCommand(F("date"), cmd_date);
+    shell.addCommand(F("clear_msgs"), cmd_clear_msgs);
 }
 
 

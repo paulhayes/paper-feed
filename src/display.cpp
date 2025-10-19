@@ -28,6 +28,8 @@ void setupDisplay() {
 
     // Display QR code with latest message if available
     String latestMessage = getLatestMessage();
+    Serial.print("Latest message:");
+    Serial.println(latestMessage);
     displayQRCodeAndMessage(latestMessage);
 }
 
@@ -53,65 +55,31 @@ void displayQRCodeAndMessage(const String& message) {
     // Calculate message area (below QR code)
     int messageY = QR_SIZE + 10;
     int messageAreaHeight = displayHeight - QR_SIZE - 20;
-
+    
     // Draw message area background
     canvas.fillRect(0, messageY, displayWidth, messageAreaHeight, TFT_LIGHTGRAY);
+    canvas.setTextWrap(true);
 
     // Set up text for message display
     canvas.setTextColor(TFT_BLACK);
     canvas.setTextDatum(TL_DATUM);
-    canvas.setFont(&fonts::Font4);
+    canvas.setFont(&fonts::DejaVu56);
 
     // Draw "Latest Message:" label
     canvas.drawString("Latest Message:", 10, messageY + 5);
-
-    // Draw the message with word wrapping
+    
     if (message.length() > 0) {
-        int textX = 10;
-        int textY = messageY + 35;
-        int maxWidth = displayWidth - 20;
-
-        canvas.setFont(&fonts::Font6);
-
-        // Simple word wrapping
-        String remainingText = message;
-        int lineHeight = 32;
-
-        while (remainingText.length() > 0 && textY < displayHeight - 10) {
-            int endIndex = remainingText.length();
-
-            // Find the longest substring that fits
-            while (endIndex > 0 && canvas.textWidth(remainingText.substring(0, endIndex)) > maxWidth) {
-                endIndex--;
-            }
-
-            // If we couldn't fit even one character, break
-            if (endIndex == 0) {
-                endIndex = 1;
-            }
-
-            // Try to break at a space if possible
-            if (endIndex < remainingText.length()) {
-                int spaceIndex = remainingText.lastIndexOf(' ', endIndex);
-                if (spaceIndex > 0 && spaceIndex > endIndex - 20) {
-                    endIndex = spaceIndex + 1;
-                }
-            }
-
-            // Draw the line
-            String line = remainingText.substring(0, endIndex);
-            line.trim();
-            canvas.drawString(line, textX, textY);
-
-            // Move to next line
-            remainingText = remainingText.substring(endIndex);
-            remainingText.trim();
-            textY += lineHeight;
-        }
+        canvas.setFont(&fonts::DejaVu72);
+        canvas.setTextWrap(true);
+        //canvas.setCursor(10, messageY + 35);
+        canvas.drawString(message,10, messageY+5+canvas.fontHeight()+5);
+        canvas.setTextWrap(true);
     } else {
         canvas.setFont(&fonts::Font4);
-        canvas.drawString("No messages yet", 10, messageY + 35);
+        canvas.drawString("No messages yet", 10, messageY + 5 + canvas.fontHeight());
     }
+
+    
 
     // Push canvas to display
     canvas.pushSprite(0, 0);
