@@ -35,6 +35,8 @@ env.Append(CPPDEFINES=[
     ('OTA_HASH',env.StringifyMacro(ota_hash))
 ])
 
-img = qrcode.make(f"WIFI:T:WPA;S:{wifi_ssid};P:{wifi_password};;")
+qrcode_str = f"WIFI:T:WPA;S:{wifi_ssid};P:{wifi_password};;"
+print(qrcode_str)
+img = qrcode.make(qrcode_str)
 type(img)  # qrcode.image.pil.PilImage
 img.save("connect-qr.png")

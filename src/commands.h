@@ -191,6 +191,65 @@ int cmd_props(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
+int cmd_date(int argc, char **argv) {
+    if(argc == 1) {
+        // Get current date/time
+        auto dt = M5.Rtc.getDateTime();
+        char buffer[32];
+        sprintf(buffer, "%04d-%02d-%02dT%02d:%02d:%02dZ",
+                dt.date.year, dt.date.month, dt.date.date,
+                dt.time.hours, dt.time.minutes, dt.time.seconds);
+        Serial.println(buffer);
+        return EXIT_SUCCESS;
+    } else if(argc == 2) {
+        // Set date/time from ISO 8601 UTC string
+        // Expected format: YYYY-MM-DDTHH:MM:SSZ
+        String dateStr = String(argv[1]);
+
+        if(dateStr.length() < 19) {
+            Serial.println("Invalid date format. Expected: YYYY-MM-DDTHH:MM:SSZ");
+            return -1;
+        }
+
+        // Parse the date string
+        int year = dateStr.substring(0, 4).toInt();
+        int month = dateStr.substring(5, 7).toInt();
+        int day = dateStr.substring(8, 10).toInt();
+        int hour = dateStr.substring(11, 13).toInt();
+        int minute = dateStr.substring(14, 16).toInt();
+        int second = dateStr.substring(17, 19).toInt();
+
+        // Validate ranges
+        if(year < 2000 || year > 2099 ||
+           month < 1 || month > 12 ||
+           day < 1 || day > 31 ||
+           hour < 0 || hour > 23 ||
+           minute < 0 || minute > 59 ||
+           second < 0 || second > 59) {
+            Serial.println("Date/time values out of range");
+            return -2;
+        }
+
+        // Create DateTime structure
+        m5::rtc_datetime_t rtcDateTime;
+        rtcDateTime.date.year = year;
+        rtcDateTime.date.month = month;
+        rtcDateTime.date.date = day;
+        rtcDateTime.time.hours = hour;
+        rtcDateTime.time.minutes = minute;
+        rtcDateTime.time.seconds = second;
+
+        // Set the RTC
+        M5.Rtc.setDateTime(rtcDateTime);
+
+        Serial.print("RTC set to: ");
+        Serial.println(argv[1]);
+        return EXIT_SUCCESS;
+    } else {
+        return badArgCount(argv[0]);
+    }
+}
+
 void setupCommands() {
     shell.attach(Serial);
     shell.addCommand(F("reset"), cmd_reset);
@@ -200,6 +259,7 @@ void setupCommands() {
     shell.addCommand(F("exists"), cmd_exists);
     shell.addCommand(F("dir"), cmd_dir);
     shell.addCommand(F("props"), cmd_props);
+    shell.addCommand(F("date"), cmd_date);
 }
 
 

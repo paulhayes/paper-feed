@@ -28,9 +28,6 @@ extern uint8_t ledState;
 extern bool updateLed;
 extern bool exists(String path);
 
-char wifi_ssid[] = WIFI_SSID;
-char wifi_password[] = WIFI_PASS;
-
 void networkSetup(){
   setupWiFi();
   setupOTA();
@@ -40,10 +37,12 @@ void networkSetup(){
 }
 
 void setupWiFi() {
-    WiFi.setTxPower(WIFI_POWER_7dBm);
     WiFi.mode(WIFI_AP);
+    WiFi.setTxPower(WIFI_POWER_7dBm);
     WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
-    WiFi.softAP(wifi_ssid, wifi_password);
+    Serial.print("wifi password:");
+    Serial.println(wifi_password);
+    WiFi.softAP(WIFI_SSID, WIFI_PASS);
 }
 
 void setupOTA() {
@@ -297,7 +296,7 @@ void loadMessagesFromDisk() {
 
 // Clean up old messages
 void cleanupOldMessages() {
-    unsigned long now = millis() / 1000; // Current time in seconds (approximation)
+    unsigned long now = getRtcTime();
 
     // Remove messages older than 30 days
     int writeIdx = 0;
@@ -357,7 +356,7 @@ void handlePostMessage() {
     server.sendHeader("Access-Control-Allow-Origin", "*");
 
     // Check rate limit
-    unsigned long now = millis() / 1000;
+    unsigned long now = getRtcTime();
     if (now - lastPostTime < RATE_LIMIT_SECONDS) {
         DynamicJsonDocument doc(256);
         doc["success"] = false;

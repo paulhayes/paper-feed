@@ -11,9 +11,14 @@ uint8_t ledState = LOW;
 bool updateLed = true;
 
 void setup() {
-  setCpuFrequencyMhz(80);
+  //setCpuFrequencyMhz(80);
   pinMode(4, OUTPUT);
   Serial.begin(115200);
+
+  // Initialize M5Unified
+  auto cfg = M5.config();
+  
+  M5.begin();
 
   SPIFFS.begin();
 
@@ -49,4 +54,18 @@ bool exists(String path) {
   }
   file.close();
   return fileExists;
+}
+
+unsigned long getRtcTime() {
+  auto dt = M5.Rtc.getDateTime();
+  // Convert to Unix timestamp
+  struct tm timeinfo;
+  timeinfo.tm_year = dt.date.year - 1900;
+  timeinfo.tm_mon = dt.date.month - 1;
+  timeinfo.tm_mday = dt.date.date;
+  timeinfo.tm_hour = dt.time.hours;
+  timeinfo.tm_min = dt.time.minutes;
+  timeinfo.tm_sec = dt.time.seconds;
+  timeinfo.tm_isdst = 0;
+  return mktime(&timeinfo);
 }
