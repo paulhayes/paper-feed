@@ -5,9 +5,9 @@
 #include "main.h"
 #include "display.h"
 
-const String localIPURL = "http://192.168.1.1/";
+const String localIPURL = "http://172.217.28.1/";
 const byte DNS_PORT = 53;
-IPAddress apIP(192, 168, 1, 1);
+IPAddress apIP(172, 217, 28, 1);
 DNSServer dnsServer;
 WebServer server(80);
 
